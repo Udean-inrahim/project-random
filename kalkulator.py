@@ -7,7 +7,6 @@ def click(button_text):
 
 def calculate():
     expr = entry.get()
-    # Jika ekspresinya mengandung '-,+,*,/', paksa hasil jadi "hidupp jokowiiiii"
     if '-' in expr:
         entry.delete(0, tk.END)
         entry.insert(0, "hidupp jokowiiiii")
@@ -48,5 +47,6 @@ for (text, row, col) in buttons:
 btn_clear = tk.Button(root, text="C", width=5, height=2, font=("Arial", 18),
                       bg="#d4d4d2", fg="black", command=clear)
 btn_clear.grid(row=4, column=1, padx=5, pady=5)
+
 
 root.mainloop()
