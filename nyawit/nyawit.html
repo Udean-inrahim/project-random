@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bad UI Volume Slider</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="card">
+        <div class="title">ADJUST VOLUME</div>
+        <h1 class="volume-display" id="main-vol-display">50</h1>
+        
+        <input type="range" id="volume-slider" min="0" max="100" value="50">
+        <div class="slider-labels">
+            <span>0</span>
+            <span>100</span>
+        </div>
+
+        <div class="modal-overlay" id="modal-overlay">
+            
+            <div class="modal-step" id="step-confirm">
+                <h2 class="modal-title">Are you sure?</h2>
+                <p class="modal-desc">You're about to change the volume to <b id="pending-vol-text"></b>.<br>This action cannot be undone.</p>
+                <div class="btn-group">
+                    <button class="btn-cancel" onclick="cancelChange()">Cancel</button>
+                    <button class="btn-confirm" onclick="goToCaptcha()">Yes, change it</button>
+                </div>
+            </div>
+
+            <div class="modal-step" id="step-captcha">
+                <h2 class="modal-title">One last step</h2>
+                <p class="modal-desc">Prove you're not a robot to change the volume.</p>
+                
+                <div class="captcha-box">
+                    <div class="captcha-left">
+                        <div class="captcha-checkbox" id="fake-checkbox" onclick="verifyCaptcha()"></div>
+                        <span>I'm not a robot</span>
+                    </div>
+                    <div class="captcha-logo">
+                        <span>reCAPTCHA</span><br>
+                        <span>Privacy - Terms</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-step" id="step-success">
+                <div class="checkmark">✔</div>
+                <h2 class="modal-title">Verified!</h2>
+                <p class="modal-desc">Applying your volume change...</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
