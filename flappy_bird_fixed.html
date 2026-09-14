@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Bird Clone</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+  background:#222; font-family:Arial,sans-serif;
+}
+.game-wrap{position:relative;width:420px;max-width:95vw}
+canvas{
+  display:block;width:100%;height:auto;border-radius:14px;
+  box-shadow:0 10px 35px rgba(0,0,0,.45);
+}
+#startScreen{
+  position:absolute;inset:0;z-index:10;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-radius:14px;background:rgba(0,0,0,.55);
+  transition:opacity .45s ease;
+}
+#startScreen h1{
+  color:#fff;font-size:42px;margin:0 0 28px;
+  text-shadow:3px 4px 0 rgba(0,0,0,.3);
+}
+#startBtn{
+  border:0;border-radius:15px;padding:16px 42px;
+  font-size:25px;font-weight:bold;cursor:pointer;
+  background:#ffd83d;box-shadow:0 6px 0 #c59f00;
+}
+#startBtn:active{transform:translateY(5px);box-shadow:0 1px 0 #c59f00}
+#countdown{color:#fff;font-size:78px;font-weight:900;display:none}
+#restart{
+  margin-top:12px;width:100%;padding:10px;border:0;border-radius:10px;
+  cursor:pointer;font-weight:bold;display:none;
+}
+#message{
+  position:absolute;left:0;right:0;top:48%;text-align:center;
+  color:#fff;font-size:24px;font-weight:bold;pointer-events:none;display:none;
+}
+</style>
+</head>
+<body>
+
+<div class="game-wrap">
+  <canvas id="game" width="420" height="640"></canvas>
+
+  <div id="startScreen">
+    <h1>FLAPPY BIRD</h1>
+    <button id="startBtn" type="button">START</button>
+    <div id="countdown">3</div>
+  </div>
+
+  <div id="message"></div>
+  <button id="restart" type="button">RESTART</button>
+</div>
+
+<script>
+"use strict";
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const startScreen = document.getElementById("startScreen");
+const startBtn = document.getElementById("startBtn");
+const countdown = document.getElementById("countdown");
+const restartBtn = document.getElementById("restart");
+const message = document.getElementById("message");
+
+let bird, pipes, score, best=0, running=false, started=false, frame=0;
+
+const gravity=.55;
+const flap=-9;
+const pipeW=72;
+const gap=155;
+const speed=3.2;
+
+function resetGame(){
+  bird={x:90,y:300,r:14,vy:0};
+  pipes=[];
+  score=0;
+  frame=0;
+  running=false;
+}
+
+function startGame(){
+  if(running) return;
+
+  resetGame();
+  started=true;
+  startBtn.style.display="none";
+  countdown.style.display="block";
+
+  let n=3;
+  countdown.textContent=n;
+
+  const timer=setInterval(()=>{
+    n--;
+    if(n>0){
+      countdown.textContent=n;
+    }else{
+      clearInterval(timer);
+      countdown.textContent="GO!";
+
+      setTimeout(()=>{
+        startScreen.style.opacity="0";
+
+        setTimeout(()=>{
+          startScreen.style.display="none";
+          countdown.style.display="none";
+          running=true;
+          restartBtn.style.display="block";
+          flapBird();
+        },450);
+      },250);
+    }
+  },700);
+}
+
+function flapBird(){
+  if(!started || !running) return;
+  bird.vy=flap;
+}
+
+function addPipe(){
+  const minTop=70;
+  const maxTop=canvas.height-40-gap-100;
+  const top=minTop+Math.random()*(maxTop-minTop);
+  pipes.push({x:canvas.width+20,top,passed:false});
+}
+
+function hit(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x &&
+         a.y < b.y+b.h && a.y+a.h > b.y;
+}
+
+function update(){
+  if(!running) return;
+
+  frame++;
+  bird.vy+=gravity;
+  bird.y+=bird.vy;
+
+  if(frame%105===0) addPipe();
+
+  for(let i=pipes.length-1;i>=0;i--){
+    const p=pipes[i];
+    p.x-=speed;
+
+    if(!p.passed && p.x+pipeW<bird.x){
+      p.passed=true;
+      score++;
+      best=Math.max(best,score);
+    }
+
+    if(p.x+pipeW<-10) pipes.splice(i,1);
+
+    const br={x:bird.x-bird.r,y:bird.y-bird.r,w:bird.r*2,h:bird.r*2};
+    const topRect={x:p.x,y:0,w:pipeW,h:p.top};
+    const botRect={
+      x:p.x,y:p.top+gap,w:pipeW,
+      h:canvas.height-(p.top+gap)-40
+    };
+
+    if(hit(br,topRect)||hit(br,botRect)) gameOver();
+  }
+
+  if(bird.y+bird.r>=canvas.height-40 || bird.y-bird.r<=0) gameOver();
+}
+
+function gameOver(){
+  if(!running)return;
+  running=false;
+  message.textContent="GAME OVER  •  Skor: "+score;
+  message.style.display="block";
+}
+
+function draw(){
+  const sky=ctx.createLinearGradient(0,0,0,canvas.height);
+  sky.addColorStop(0,"#75cfff");
+  sky.addColorStop(1,"#d9f4ff");
+  ctx.fillStyle=sky;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // clouds
+  ctx.fillStyle="rgba(255,255,255,.75)";
+  [[70,100],[300,145],[180,55]].forEach(([x,y])=>{
+    ctx.beginPath();
+    ctx.arc(x,y,22,0,Math.PI*2);
+    ctx.arc(x+25,y+5,17,0,Math.PI*2);
+    ctx.arc(x-22,y+7,16,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // pipes
+  pipes.forEach(p=>{
+    ctx.fillStyle="#35b84a";
+    ctx.fillRect(p.x,0,pipeW,p.top);
+    ctx.fillRect(p.x,p.top+gap,pipeW,canvas.height-p.top-gap-40);
+
+    ctx.fillStyle="#238b36";
+    ctx.fillRect(p.x-5,p.top-14,pipeW+10,14);
+    ctx.fillRect(p.x-5,p.top+gap,pipeW+10,14);
+  });
+
+  // ground
+  ctx.fillStyle="#e3b15b";
+  ctx.fillRect(0,canvas.height-40,canvas.width,40);
+  ctx.fillStyle="#c98a35";
+  ctx.fillRect(0,canvas.height-40,canvas.width,6);
+
+  // bird
+  ctx.save();
+  ctx.translate(bird.x,bird.y);
+  ctx.rotate(Math.max(-.5,Math.min(1,bird.vy/12)));
+
+  ctx.fillStyle="#ffd83d";
+  ctx.beginPath();
+  ctx.arc(0,0,bird.r,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#fff";
+  ctx.beginPath();ctx.arc(7,-5,5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#111";
+  ctx.beginPath();ctx.arc(8,-5,2,0,Math.PI*2);ctx.fill();
+
+  ctx.fillStyle="#f08a24";
+  ctx.beginPath();
+  ctx.moveTo(12,2);ctx.lineTo(27,7);ctx.lineTo(12,11);ctx.closePath();ctx.fill();
+
+  ctx.restore();
+
+  // score
+  ctx.textAlign="center";
+  ctx.font="bold 48px Arial";
+  ctx.fillStyle="rgba(0,0,0,.25)";
+  ctx.fillText(score,212,67);
+  ctx.fillStyle="#fff";
+  ctx.fillText(score,209,64);
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// PENTING: listener hanya dipasang SEKALI.
+startBtn.addEventListener("click",startGame);
+
+restartBtn.addEventListener("click",()=>{
+  message.style.display="none";
+  resetGame();
+  started=true;
+  running=true;
+  flapBird();
+});
+
+canvas.addEventListener("pointerdown",(e)=>{
+  e.preventDefault();
+  if(running) flapBird();
+});
+
+window.addEventListener("keydown",(e)=>{
+  if(e.code==="Space"){
+    e.preventDefault();
+    if(!started){
+      startGame();
+    }else if(running){
+      flapBird();
+    }
+  }
+});
+
+resetGame();
+loop();
+</script>
+</body>
+</html>
